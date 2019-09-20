@@ -1,7 +1,7 @@
 const express = require("express");
 
 const app = express();
-const port = 443;
+const port = 80;
 
 app.get("*", (req, res) => {
   console.log("get request received...");
