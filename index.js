@@ -1,5 +1,6 @@
 const express = require("express");
 const https = require("https");
+const fs = require("fs");
 
 const app = express();
 const port = 443;
@@ -16,9 +17,14 @@ app.post("*", (req, res) => {
   res.send("response...");
 });
 
-// app.listen(port, err => {
-//   if (err) return console.error("error starting server:", err);
-//   console.log("server started on port", port);
-// });
-
-https.createServer(app).listen(port);
+// we will pass our 'app' to 'https' server
+https
+  .createServer(
+    {
+      key: fs.readFileSync("./key.pem"),
+      cert: fs.readFileSync("./cert.pem"),
+      passphrase: "honecapital"
+    },
+    app
+  )
+  .listen(port);
