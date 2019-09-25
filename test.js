@@ -13,6 +13,10 @@ slackEvents.on("message", event => {
   );
 });
 
+slackEvents.on("error", error => {
+  console.log(error.name); // TypeError
+});
+
 (async () => {
   // Start the built-in server
   const server = await slackEvents.start(port);
