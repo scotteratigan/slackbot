@@ -1,33 +1,115 @@
+var Botkit = require("botkit");
 require("dotenv").config();
-const express = require("express");
-const bodyParser = require("body-parser");
-const request = require("request");
 
-// Creates express app
-const app = express();
-// The port used for Express server
-const PORT = 3000;
-// Starts server
-app.listen(process.env.PORT || PORT, function() {
-  console.log("Bot is listening on port " + PORT);
+console.log(process.env.CLIENT_ID);
+
+if (
+  !process.env.CLIENT_ID ||
+  !process.env.CLIENT_SECRET ||
+  !process.env.PORT ||
+  !process.env.VERIFICATION_TOKEN ||
+  !process.env.CLIENT_SIGNING_SECRET ||
+  !process.env.BOT_TOKEN
+) {
+  console.log(
+    "Error: Specify CLIENT_ID, CLIENT_SECRET, VERIFICATION_TOKEN and PORT in environment"
+  );
+  process.exit(1);
+} else {
+  console.log("Good job, you have the variables!");
+}
+
+var controller = Botkit.slackbot({
+  json_file_store: "./db_slackbutton_slash_command/",
+  debug: true,
+  clientSigningSecret: process.env.CLIENT_SIGNING_SECRET
 });
 
-app.use(bodyParser.urlencoded({ extended: true }));
-app.use(bodyParser.json());
-app.post("/", (req, res) => {
-  var data = {
-    form: {
-      token: process.env.SLACK_AUTH_TOKEN,
-      channel: "#general",
-      text: "Hi! :wave: \n I'm your new bot."
-    }
-  };
-  request.post("https://slack.com/api/chat.postMessage", data, function(
-    error,
-    response,
-    body
+controller.configureSlackApp({
+  clientId: process.env.CLIENT_ID,
+  clientSecret: process.env.CLIENT_SECRET,
+  clientSigningSecret: process.env.CLIENT_SIGNING_SECRET,
+  scopes: ["commands", "bot"]
+});
+
+controller.setupWebserver(process.env.PORT, function(err, webserver) {
+  controller.createWebhookEndpoints(controller.webserver);
+  controller.createOauthEndpoints(controller.webserver, function(
+    err,
+    req,
+    res
   ) {
-    // Sends welcome message
-    res.json();
+    if (err) {
+      res.status(500).send("ERROR: " + err);
+    } else {
+      res.send("Success!");
+    }
   });
+});
+
+var bot = controller
+  .spawn({
+    token: process.env.BOT_TOKEN,
+    incoming_webhook: {
+      url: "https://hooks.slack.com/services/YOUR/NEW/WEBHOOK"
+    }
+  })
+  .startRTM();
+
+setInterval(() => {
+  bot.config.incoming_webhook.url =
+    "https://hooks.slack.com/services/YOUR/NEW/WEBHOOK";
+  bot.sendWebhook(
+    {
+      attachments: [
+        {
+          text: "Pinging the standup-bot"
+        }
+      ]
+    },
+    function(err, res) {
+      if (err) {
+        console.log("web err", err);
+      }
+    }
+  );
+}, 300000);
+
+controller.hears("hi", "direct_message", function(bot, message) {
+  bot.reply(message, "Hello.");
+});
+
+controller.hears(["webhook", "webhook2"], "direct_message", function(
+  bot,
+  message
+) {
+  if (message.text == "webhook") {
+    bot.config.incoming_webhook.url =
+      "https://hooks.slack.com/services/YOUR/NEW/WEBHOOK";
+  } else {
+    bot.config.incoming_webhook.url =
+      "https://hooks.slack.com/services/YOUR/NEW/WEBHOOK";
+  }
+  bot.sendWebhook(
+    {
+      text: "Hey we've got the webhook!"
+    },
+    function(err, res) {
+      if (err) {
+        console.log("web err", err);
+      }
+    }
+  );
+});
+
+controller.on("slash_command", function(bot, message) {
+  console.log("heard a slash command!");
+  bot.replyAcknowledge();
+  switch (message.command) {
+    case "/echo":
+      bot.reply(message, "heard ya!");
+      break;
+    default:
+      bot.reply(message, "Did not recognize that command, sorry!");
+  }
 });
