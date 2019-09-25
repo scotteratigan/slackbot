@@ -1,16 +1,33 @@
-const { createEventAdapter } = require("@slack/events-api");
-const slackSigningSecret = "72db46fce7af069fb4e612b00c6ca2b7";
-const slackEvents = createEventAdapter(slackSigningSecret);
-const port = process.env.PORT || 3000;
+require("dotenv").config();
+const express = require("express");
+const bodyParser = require("body-parser");
+const request = require("request");
 
-// Attach listeners to events by Slack Event "type". See: https://api.slack.com/events/message.im
-slackEvents.on("message", event => {
-  console.log(
-    `Received a message event: user ${event.user} in channel ${event.channel} says ${event.text}`
-  );
+// Creates express app
+const app = express();
+// The port used for Express server
+const PORT = 3000;
+// Starts server
+app.listen(process.env.PORT || PORT, function() {
+  console.log("Bot is listening on port " + PORT);
 });
 
-(async () => {
-  const server = await slackEvents.start(port);
-  console.log(`Listening for events on ${server.address().port}`);
-})();
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(bodyParser.json());
+app.post("/", (req, res) => {
+  var data = {
+    form: {
+      token: process.env.SLACK_AUTH_TOKEN,
+      channel: "#general",
+      text: "Hi! :wave: \n I'm your new bot."
+    }
+  };
+  request.post("https://slack.com/api/chat.postMessage", data, function(
+    error,
+    response,
+    body
+  ) {
+    // Sends welcome message
+    res.json();
+  });
+});
