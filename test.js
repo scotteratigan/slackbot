@@ -14,6 +14,7 @@ slackEvents.on("message", event => {
 });
 
 slackEvents.on("error", error => {
+  console.log(JSON.stringify(error));
   console.log(error.name); // TypeError
 });
 
