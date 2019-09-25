@@ -1,5 +1,5 @@
 const express = require("express");
-// const http = require("http");
+const http = require("http");
 const https = require("https");
 const fs = require("fs");
 
@@ -7,10 +7,19 @@ const app = express();
 const port = 443;
 
 // Cfreate redirect for http connections:
-var http = express.createServer();
-http.get("*", function(req, res) {
-  res.redirect("https://" + req.headers.host + req.url);
-});
+
+http
+  .createServer(function(req, res) {
+    res.writeHead(301, {
+      Location: "https://" + req.headers["host"] + req.url
+    });
+    res.end();
+  })
+  .listen(80);
+// var http = express.createServer();
+// http.get("*", function(req, res) {
+//   res.redirect("https://" + req.headers.host + req.url);
+// });
 
 app.get("*", (req, res) => {
   console.log("get request received...");
