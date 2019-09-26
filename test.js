@@ -28,6 +28,11 @@ slackEvents.on("message", (event, body, headers) => {
   }
 });
 
+// All errors in listeners are caught here. If this weren't caught, the program would terminate.
+slackEvents.on("error", error => {
+  console.log(error.name); // TypeError
+});
+
 (async () => {
   const server = await slackEvents.start(port);
   console.log(`Listening for events on ${server.address().port}`);
